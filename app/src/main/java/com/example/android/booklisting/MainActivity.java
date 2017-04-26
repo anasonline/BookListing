@@ -18,7 +18,7 @@ public class MainActivity extends AppCompatActivity
      */
     //TODO to be replaced later to get the value from a search box
     private static final String GOOGLE_REQUEST_URL =
-            "https://www.googleapis.com/books/v1/volumes?q=android&maxResults=1";
+            "https://www.googleapis.com/books/v1/volumes?q=android&maxResults=2";
 
     /**
      * Constant value for the book loader ID. We can choose any integer.
