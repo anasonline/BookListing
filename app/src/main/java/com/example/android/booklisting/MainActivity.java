@@ -51,12 +51,14 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         // Find a reference to the {@link ListView} in the layout
         bookListView = (ListView) findViewById(R.id.list);
 
-        // Setup empty TextView
         mEmptyStateTextView = (TextView) findViewById(R.id.empty_view);
         bookListView.setEmptyView(mEmptyStateTextView);
+
+        mEmptyStateTextView.setText(R.string.no_results);
 
         // Create a new adapter that takes an empty list of books as input
         mAdapter = new BookAdapter(MainActivity.this, new ArrayList<Book>());
