@@ -7,7 +7,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,22 +25,38 @@ public class MainActivity extends AppCompatActivity
     /**
      * URL for Google Books API
      */
-    //TODO to be replaced later to get the value from a search box
-    private String GOOGLE_REQUEST_URL =
-            "https://www.googleapis.com/books/v1/volumes?q=android&maxResults=10";
+    public String defaultRequestUrl = "https://www.googleapis.com/books/v1/volumes?q=";
+    Button button;
+    EditText searchQueryEditText;
+    String keyword;
+    View loadingIndicator;
     /**
      * Adapter for the list of books
      */
     private BookAdapter mAdapter;
+
+    /**
+     * TextView that is displayed when the list is empty
+     */
+    private TextView mEmptyStateTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final Button button = (Button) findViewById(R.id.search_button);
+        loadingIndicator = findViewById(R.id.loading_indicator);
+        loadingIndicator.setVisibility(View.GONE);
+
+        searchQueryEditText = (EditText) findViewById(R.id.search_query);
+
+        button = (Button) findViewById(R.id.search_button);
+
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
+                keyword = searchQueryEditText.getText().toString();
+
                 // Find a reference to the {@link ListView} in the layout
                 ListView bookListView = (ListView) findViewById(R.id.list);
 
@@ -56,20 +74,32 @@ public class MainActivity extends AppCompatActivity
                 // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
                 // because this activity implements the LoaderCallbacks interface).
                 loaderManager.initLoader(BOOK_LOADER_ID, null, MainActivity.this);
+
+                if (loaderManager.getLoader(BOOK_LOADER_ID).isStarted()) {
+                    loadingIndicator.setVisibility(View.VISIBLE);
+                    //restart it if there's one
+                    loaderManager.restartLoader(BOOK_LOADER_ID, null, MainActivity.this);
+                }
             }
         });
+    }
+
+
+    public String createQuery(String defaultRequestUrl) {
+        String searchQuery = defaultRequestUrl + keyword + "&maxResults=10";
+        return searchQuery;
     }
 
     @Override
     public Loader<List<Book>> onCreateLoader(int i, Bundle bundle) {
         // Create a new loader for the given URL
-        return new BookLoader(this, GOOGLE_REQUEST_URL);
+        return new BookLoader(this, createQuery(defaultRequestUrl));
     }
 
     @Override
     public void onLoadFinished(Loader<List<Book>> loader, List<Book> books) {
-
-        // Clear the adapter of previous earthquake data
+        loadingIndicator.setVisibility(View.GONE);
+        // Clear the adapter of previous book data
         mAdapter.clear();
 
         // If there is a valid list of {@link Book}s, then add them to the adapter's
@@ -77,7 +107,6 @@ public class MainActivity extends AppCompatActivity
         if (books != null && !books.isEmpty()) {
             mAdapter.addAll(books);
         }
-
     }
 
     @Override

@@ -135,6 +135,14 @@ public final class QueryUtils {
      * parsing the given JSON response.
      */
     private static List<Book> extractFeatureFromJson(String bookJSON) {
+
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         // If the JSON string is empty or null, then return early.
         if (TextUtils.isEmpty(bookJSON)) {
             return null;
