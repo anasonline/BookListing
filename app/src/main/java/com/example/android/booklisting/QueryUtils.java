@@ -175,8 +175,6 @@ public final class QueryUtils {
                 // String author = authorsArray.get(0).toString();
                 String author = authorsArray.get(0).toString();
 
-                Log.v(LOG_TAG, "author is " + author);
-
                 // Extract the value for the key "authors"
                 //String author = volumeInfo.getString("authors");
 
