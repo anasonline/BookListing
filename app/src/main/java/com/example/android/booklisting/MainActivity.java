@@ -2,7 +2,10 @@ package com.example.android.booklisting;
 
 import android.app.LoaderManager;
 import android.app.LoaderManager.LoaderCallbacks;
+import android.content.Context;
 import android.content.Loader;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -10,7 +13,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,19 +21,20 @@ public class MainActivity extends AppCompatActivity
 
     /**
      * Constant value for the book loader ID. We can choose any integer.
-     * This really only comes into play if you're using multiple loaders.
      */
     private static final int BOOK_LOADER_ID = 1;
+
     /**
      * URL for Google Books API
      */
     public String defaultRequestUrl = "https://www.googleapis.com/books/v1/volumes?q=";
-    Button button;
-    EditText searchQueryEditText;
-    String keyword;
-    View loadingIndicator;
 
+    EditText searchQueryEditText;
+    String searchQuery;
+    String keyword;
+    ListView bookListView;
     LoaderManager loaderManager;
+
     /**
      * Adapter for the list of books
      */
@@ -40,6 +43,7 @@ public class MainActivity extends AppCompatActivity
     /**
      * TextView that is displayed when the list is empty
      */
+
     private TextView mEmptyStateTextView;
 
     @Override
@@ -47,59 +51,89 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        loadingIndicator = findViewById(R.id.loading_indicator);
+        // Find a reference to the {@link ListView} in the layout
+        bookListView = (ListView) findViewById(R.id.list);
+
+        // Setup empty TextView
+        mEmptyStateTextView = (TextView) findViewById(R.id.empty_view);
+        bookListView.setEmptyView(mEmptyStateTextView);
+
+        // Create a new adapter that takes an empty list of books as input
+        mAdapter = new BookAdapter(MainActivity.this, new ArrayList<Book>());
+
+        // Set the adapter on the {@link ListView}
+        bookListView.setAdapter(mAdapter);
+
+        // Get the loadingIndicator and hide it
+        View loadingIndicator = findViewById(R.id.loading_indicator);
         loadingIndicator.setVisibility(View.GONE);
 
-        searchQueryEditText = (EditText) findViewById(R.id.search_query);
+        // Initialize loader
+        loaderManager = getLoaderManager();
+        loaderManager.initLoader(BOOK_LOADER_ID, null, this);
 
-        button = (Button) findViewById(R.id.search_button);
+        Button button = (Button) findViewById(R.id.search_button);
 
         button.setOnClickListener(new View.OnClickListener() {
+
             public void onClick(View v) {
 
+                // Show loading indicator when button is clicked
+                View loadingIndicator = findViewById(R.id.loading_indicator);
+                loadingIndicator.setVisibility(View.VISIBLE);
+                // Get a reference to the EditText
+                searchQueryEditText = (EditText) findViewById(R.id.search_query);
+                // Get the entered search keyword
                 keyword = searchQueryEditText.getText().toString();
+                // Build the search query URL
+                searchQuery = defaultRequestUrl + keyword + "&maxResults=10";
 
-                // Find a reference to the {@link ListView} in the layout
-                ListView bookListView = (ListView) findViewById(R.id.list);
-
-                // Create a new adapter that takes an empty list of books as input
-                mAdapter = new BookAdapter(MainActivity.this, new ArrayList<Book>());
-
-                // Set the adapter on the {@link ListView}
-                // so the list can be populated in the user interface
-                bookListView.setAdapter(mAdapter);
-
-                // Get a reference to the LoaderManager, in order to interact with loaders.
+                // Get a reference to the LoaderManager
                 loaderManager = getLoaderManager();
 
-                // Initialize the loader. Pass in the int ID constant defined above and pass in null for
-                // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
-                // because this activity implements the LoaderCallbacks interface).
+                // Initialize the loader
                 loaderManager.initLoader(BOOK_LOADER_ID, null, MainActivity.this);
 
-                if (loaderManager.getLoader(BOOK_LOADER_ID).isStarted()) {
-                    loadingIndicator.setVisibility(View.VISIBLE);
-                    //restart it if there's one
-                    loaderManager.restartLoader(BOOK_LOADER_ID, null, MainActivity.this);
-                }
+                search();
             }
         });
     }
 
+    public void search() {
 
-    public String createQuery(String defaultRequestUrl) {
-        String searchQuery = defaultRequestUrl + keyword + "&maxResults=10";
-        return searchQuery;
+        // Get a reference to the ConnectivityManager to check state of network connectivity
+        ConnectivityManager connMgr = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        // Get details on the currently active default data network
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
+        // If there is a network connection, fetch data
+        if (networkInfo != null && networkInfo.isConnected()) {
+
+            // Restart Loader
+            loaderManager.restartLoader(BOOK_LOADER_ID, null, this);
+
+        } else {
+            // display error
+            // First, hide loading indicator so error message will be visible
+            View loadingIndicator = findViewById(R.id.loading_indicator);
+            loadingIndicator.setVisibility(View.GONE);
+
+            // Update empty state with no connection error message
+            mEmptyStateTextView.setText(R.string.no_connection);
+        }
     }
 
     @Override
     public Loader<List<Book>> onCreateLoader(int i, Bundle bundle) {
-        // Create a new loader for the given URL
-        return new BookLoader(this, createQuery(defaultRequestUrl));
+        // Create a new loader for the given search query
+        return new BookLoader(this, searchQuery);
     }
 
     @Override
     public void onLoadFinished(Loader<List<Book>> loader, List<Book> books) {
+        View loadingIndicator = findViewById(R.id.loading_indicator);
         loadingIndicator.setVisibility(View.GONE);
         // Clear the adapter of previous book data
         mAdapter.clear();
