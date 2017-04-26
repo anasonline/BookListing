@@ -30,6 +30,8 @@ public class MainActivity extends AppCompatActivity
     EditText searchQueryEditText;
     String keyword;
     View loadingIndicator;
+
+    LoaderManager loaderManager;
     /**
      * Adapter for the list of books
      */
@@ -68,7 +70,7 @@ public class MainActivity extends AppCompatActivity
                 bookListView.setAdapter(mAdapter);
 
                 // Get a reference to the LoaderManager, in order to interact with loaders.
-                LoaderManager loaderManager = getLoaderManager();
+                loaderManager = getLoaderManager();
 
                 // Initialize the loader. Pass in the int ID constant defined above and pass in null for
                 // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
